@@ -1,0 +1,13 @@
+# This file describes a Fastly Compute package. To learn more visit:
+# https://developer.fastly.com/reference/fastly-toml/
+
+authors = ["hello@aspenjames.dev"]
+description = "aspenjames.dev@edge"
+language = "go"
+manifest_version = 3
+name = "ajdev-compute"
+service_id = ""
+
+[scripts]
+  build = "go build -o bin/main.wasm ."
+  env_vars = ["GOARCH=wasm", "GOOS=wasip1"]
