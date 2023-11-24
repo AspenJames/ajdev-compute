@@ -20,3 +20,9 @@ go.work
 # Fastly Compute compiler output (bin contains main.wasm, pkg contains package.tar.gz)
 /bin
 /pkg
+
+# CSS build
+content/node_modules/
+
+# HTML build files
+/content/static/site.css
