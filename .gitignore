@@ -25,4 +25,8 @@ go.work
 content/node_modules/
 
 # HTML build files
-/content/static/site.css
+content/static/site.css
+
+# WASM build files
+content/static/particle.wasm
+content/static/wasm_exec.js

@@ -1,0 +1,18 @@
+{{define "partials/nav"}}
+<div class="font-sans h-fit">
+  <header x-bind:class="$store.sidebar.open ? 'ml-60' : 'ml-0'" class="flex justify-between w-full h-16 min-h-full
+                        bg-bg-navbar dark:bg-ajdev-blue-dark text-ajdev-text transition-all">
+    <div class="flex items-center px-4 w-full"> <!-- header content -->
+      <button @click="$store.sidebar.toggle()" x-show="!$store.sidebar.open" class="p-2"> <!-- open sidebar trigger-->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             width="2" role="img" aria-labelledby="hamburgerIconTitle">
+          <title id="hamburgerIconTitle">Menu</title>
+          <path d="M6 7L18 7M6 12L18 12M6 17L18 17" />
+        </svg>
+      </button>
+      <h1 class="text-xl ml-2">aspenjames.dev</h6> <!-- "logo" -->
+    </div> <!-- end header content -->
+  </header>
+  {{ template "partials/sidebar" . }}
+</div>
+{{end}}

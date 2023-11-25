@@ -1,0 +1,23 @@
+{{define "layouts/error"}}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Personal site for Aspen James <hello@aspenjames.dev>"
+    />
+
+    <link rel="icon" href="/static/favicon.ico" />
+
+    <title>AspenJames</title>
+  </head>
+  <body style="
+    height:100vh;
+    font-family:'Lucida Sans Unicode','Lucida Grande','Lucida Sans',Arial,sans-serif;
+    background-color:{{ if .DarkMode }}#303030{{ else }}#fafafa{{ end }};">
+    <main>{{template "_main" .}}</main>
+  </body>
+</html>
+{{end}}

@@ -1,0 +1,23 @@
+{{define "partials/sidebar"}}
+<div x-cloak x-show="$store.sidebar.open" x-transition
+             class="fixed top-0 left-0 w-60 h-full flex-shrink-0 flex flex-col
+                    bg-bg-accent-light dark:bg-bg-accent-dark">
+  <div class="h-16 px-4 flex flex-col items-end content-center justify-center flex-nowrap">
+    <button @click="$store.sidebar.toggle()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           width="2" role="img" aria-labelledby="chevronLeftIconTitle">
+        <title id="chevronLeftIconTitle">Chevron Left</title>
+        <polyline points="14 18 8 12 14 6 14 6" />
+      </svg>
+    </button>
+  </div>
+  <hr class="pb-4">
+  <ul class="flex flex-col justify-center mb-4">
+    {{ range .NavLinks }}
+    {{ template "partials/navlink" . }}
+    {{ end }}
+  </ul>
+  <hr class="pb-4">
+  {{ template "partials/darkmode-toggle" }}
+</div>
+{{end}}

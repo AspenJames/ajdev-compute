@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+  display: none !important;
+}
+
+@layer base {
+  body {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  .ajdev-content {
+    @apply flex flex-col float-right items-end px-12 text-4xl lg:w-3/4 xl:w-3/5;
+  }
+
+  .ajdev-content > * {
+    @apply py-2;
+  }
+  .ajdev-header-link {
+    @apply decoration-4 underline underline-offset-8 hover:decoration-2 hover:underline-offset-4 hover:italic;
+  }
+
+  .ajdev-link {
+    @apply decoration-2 underline underline-offset-4 hover:underline-offset-2 hover:italic;
+  }
+
+  .ajdev-text {
+    @apply text-ajdev-text dark:text-ajdev-text-dark text-2xl text-right;
+  }
+}

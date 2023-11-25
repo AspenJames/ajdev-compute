@@ -1,0 +1,70 @@
+{{ define "layouts/main" }}
+<!DOCTYPE html>
+<html lang="en" {{ if .DarkMode }} class="dark" {{ end }}>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Personal site for Aspen James <hello@aspenjames.dev>" />
+
+  <link rel="stylesheet" href="/static/site.css" />
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script>
+    /* Get dark mode state from cookie. */
+    const darkModeKey = '{{ .DarkModeCookieKey }}';
+    let isDark = false;
+    const cookies = document.cookie.split(';');
+    for (let i=0; i<cookies.length; i++) {
+      const [key, value] = cookies[i].split("=");
+      if (key === darkModeKey) {
+        isDark = (value.match(/dark/i) !== null);
+        break;
+      }
+    }
+    /* Initialize Alpine.js data stores. */
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('sidebar', {
+        open: false,
+        toggle() { this.open = !this.open },
+        init() { this.open = false },
+      });
+      Alpine.store('darkMode', {
+        on: isDark,
+        toggle() {
+          this._setDarkMode(!this.on);
+          this._setCookie(this.on ? 'dark' : 'light');
+        },
+        init() {
+          this._setDarkMode(isDark);
+        },
+        _setCookie(mode) {
+          const dt = new Date();
+          dt.setFullYear(dt.getFullYear() + 1);
+          const expires = dt.toUTCString();
+          document.cookie = `${darkModeKey}=${mode}; domain=${document.domain}; expires=${expires}; samesite=strict`;
+        },
+        _setDarkMode(mode) {
+          this.on = mode;
+          const htmlClassList = document.body.parentElement.classList;
+          const targetFunc = htmlClassList[this.on ? 'add' : 'remove'];
+          targetFunc.call(htmlClassList, 'dark');
+        },
+      });
+    });
+  </script>
+
+  <title>AspenJames</title>
+</head>
+
+<body x-data class="
+  bg-bg-light dark:bg-bg-dark h-screen
+  text-ajdev-text dark:text-ajdev-text-dark
+  ">
+  <div>
+    {{template "partials/nav" .}}
+    <main x-bind:class="$store.sidebar.open ? 'ml-60' : 'ml-0'" class="py-6 transition-all">{{template "_main" .}}</main>
+  </div>
+</body>
+
+</html>
+{{ end }}
