@@ -1,0 +1,9 @@
+{{define "partials/navlink"}}
+<a href="{{ .Path }}">
+  <li class="justify-self-start flex items-center px-4 h-12
+             hover:bg-black dark:hover:bg-white hover:bg-opacity-5 dark:hover:bg-opacity-5
+             {{ if .Active }}bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-5{{ end }}">
+    {{ .Name }}
+  </li>
+</a>
+{{end}}

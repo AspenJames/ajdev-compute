@@ -1,0 +1,19 @@
+{{define "partials/darkmode-toggle"}}
+<div class="h-12 justify-self-start">
+<label for="darkMode-toggle" class="flex items-center cursor-pointer relative mb-4 ml-4">
+  <input type="checkbox" id="darkMode-toggle" class="sr-only peer"
+    x-bind:checked="$store.darkMode.on" @click="$store.darkMode.toggle()">
+  <!-- toggle element -- bg: slider track; after: slider thumb; peer-checked: dark mode state -->
+  <div class="
+    h-6 w-11 border-2 rounded-full
+    after:h-5 after:w-5 after:absolute after:top-0.5 after:left-0.5
+    after:shadow-sm after:rounded-full after:transition
+    peer-checked:after:translate-x-full
+    bg-gray-300 border-gray-300 bg-opacity-50
+    after:bg-white after:border after:border-gray-300
+    peer-checked:bg-ajdev-pink-dark peer-checked:bordbg-ajdev-pink-dark peer-checked:bg-opacity-50 peer-checked:border-opacity-50
+    peer-checked:after:bordbg-ajdev-pink-dark peer-checked:after:bg-ajdev-pink-dark"></div>
+  <span class="px-2 text-larger">Dark mode</span>
+</label>
+</div>
+{{end}}

@@ -1,25 +1,32 @@
-# Default Starter Kit for Go
+# aspenjames.dev @ edge
 
-[![Deploy to Fastly](https://deploy.edgecompute.app/button)](https://deploy.edgecompute.app/deploy)
+Personal, gohtml-based website, deployed to Fastly's [Compute] platform.
 
-Get to know the Fastly Compute@Edge environment with a basic starter that demonstrates routing, simple synthetic responses and code comments that cover common patterns.
+Licensed under the [MIT license][LICENSE]
 
-**For more details about other starter kits for Compute@Edge, see the [Fastly developer hub](https://developer.fastly.com/solutions/starters)**
+## Depedencies
 
-## Features
+* [golang]
+* [Fastly CLI][fastlycli]
+* [Node.js] and [npm]
 
-* Allow only requests with particular HTTP methods
-* Match request URL path and methods for routing
-* Build synthetic responses at the edge
+## Building
 
-## Understanding the code
+The script at `scripts/build.sh` will build the Go WASM particle animation
+binary & site CSS, then build these into the Fastly Compute WASM binary. The
+`fastly` CLI is configured to execute this build script when running e.g.
+`fastly compute serve`. Built artifacts can be cleaned up with
+`scripts/clean.sh`.
 
-This starter is intentionally lightweight, and requires no dependencies aside from the [`"github.com/fastly/compute-sdk-go/fsthttp"`](https://github.com/fastly/compute-sdk-go) repo. It will help you understand the basics of processing requests at the edge using Fastly. This starter includes implementations of common patterns explained in our [using Compute@Edge](https://developer.fastly.com/learning/compute/go/) and [VCL migration](https://developer.fastly.com/learning/compute/migrate/) guides.
+## Running locally
+`fastly compute serve` & have a blast!
 
-The starter doesn't require the use of any backends. Once deployed, you will have a Fastly service running on Compute@Edge that can generate synthetic responses at the edge.
+## Deploying
+TBD
 
-It is recommended to use the [Fastly CLI](https://github.com/fastly/cli) for this template. The template uses the `fastly.toml` scripts, to allow for building the project using your installed Go compiler. The Fastly CLI should also be used for serving and testing your build output, as well as deploying your finalized package!
-
-## Security issues
-
-Please see our [SECURITY.md](SECURITY.md) for guidance on reporting security-related issues.
+[Compute]: https://docs.fastly.com/products/compute
+[fastlycli]: https://developer.fastly.com/learning/tools/cli/
+[golang]: https://go.dev/
+[LICENSE]: ./LICENSE
+[Node.js]: https://nodejs.org/
+[npm]: https://www.npmjs.com/

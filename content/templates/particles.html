@@ -1,0 +1,26 @@
+{{template "layouts/main" .}}
+
+{{define "_main"}}
+<script src="static/wasm_exec.js"></script>
+<script type="text/javascript">
+  const go = new window.Go();
+  // polyfill
+  if (!window.WebAssembly.instantiateStreaming) {
+    window.WebAssembly.instantiateStreaming = async (resp, importObject) => {
+      const source = await (await resp).arrayBuffer();
+      return await window.WebAssembly.instantiate(source, importObject);
+    };
+  }
+  window.WebAssembly.instantiateStreaming(
+    fetch("static/particle.wasm", {
+      headers: { Accept: "application/wasm" },
+    }),
+    go.importObject
+  ).then((result) => {
+    go.run(result.instance);
+  });
+</script>
+<div class="ajdev-content">
+  <canvas id="canvas"></canvas>
+</div>
+{{end}}

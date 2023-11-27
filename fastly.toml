@@ -9,5 +9,4 @@ name = "ajdev-compute"
 service_id = ""
 
 [scripts]
-  build = "go build -o bin/main.wasm ."
-  env_vars = ["GOARCH=wasm", "GOOS=wasip1"]
+  build = "./scripts/build.sh"
