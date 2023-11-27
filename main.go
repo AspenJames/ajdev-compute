@@ -22,23 +22,112 @@ package main
 
 import (
 	"context"
+	"embed"
+	"encoding/json"
 	"fmt"
-	"os"
+	"html/template"
+	"io/fs"
+	"log"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/fastly/compute-sdk-go/fsthttp"
 )
 
-// The entry point for your application.
-//
-// Use this function to define your main request handling logic. It could be
-// used to route based on the request properties (such as method or path), send
-// the request to a backend, make completely new requests, and/or generate
-// synthetic responses.
+var (
+	//go:embed content/static/* content/templates/*
+	content   embed.FS
+	static    fs.FS
+	mimeTypes map[string]string = map[string]string{
+		".css":  "text/css",
+		".ico":  "image/x-icon",
+		".js":   "text/javascript",
+		".wasm": "application/wasm",
+	}
+
+	err404Tmpl *template.Template
+	templates  *template.Template
+	pages      map[string]string = map[string]string{
+		"/":          "content/templates/index.html",
+		"/about":     "content/templates/about.html",
+		"/particles": "content/templates/particles.html",
+		"/resume":    "content/templates/resume.html",
+	}
+
+	//go:embed content/routes.json
+	routes []byte
+	links  []*navLink
+
+	// Default max-age 1 week; 1 day for 404.
+	cacheMaxAge       int    = 60 * 60 * 24 * 7
+	cacheMaxAge404    int    = 60 * 60 * 24
+	darkModeCookieKey string = "aj-dot-dev##dark-mode"
+)
+
+type navLink struct {
+	Name   string `json:"name"`
+	Path   string `json:"path"`
+	Active bool
+}
+
+type tmplData struct {
+	DarkMode          bool
+	DarkModeCookieKey string
+	NavLinks          []*navLink
+}
+
+// Returns the tmplData for the current request.
+func getTmplData(r *fsthttp.Request) tmplData {
+	for _, l := range links {
+		l.Active = l.Path == r.URL.Path
+	}
+
+	dmCookie, err := r.Cookie(darkModeCookieKey)
+	if err != nil {
+		dmCookie = &fsthttp.Cookie{
+			Name:     darkModeCookieKey,
+			Domain:   r.URL.Hostname(),
+			SameSite: fsthttp.SameSiteStrictMode,
+			Expires:  time.Now().Add(time.Hour * 24 * 365).UTC(),
+			Value:    "light",
+		}
+		r.AddCookie(dmCookie)
+	}
+
+	return tmplData{
+		DarkModeCookieKey: darkModeCookieKey,
+		DarkMode:          dmCookie.Value == "dark",
+		NavLinks:          links,
+	}
+}
+
+func init() {
+	var err error
+	if err = json.Unmarshal(routes, &links); err != nil {
+		log.Fatal(err)
+	}
+
+	if static, err = fs.Sub(content, "content/static"); err != nil {
+		log.Fatal(err)
+	}
+	if templates, err = template.ParseFS(
+		content,
+		"content/templates/partials/*.html",
+		"content/templates/layouts/main.html",
+	); err != nil {
+		log.Fatal(err)
+	}
+	if err404Tmpl, err = template.ParseFS(
+		content,
+		"content/templates/layouts/error.html",
+		"content/templates/errors/404.html",
+	); err != nil {
+		log.Fatal(err)
+	}
+}
 
 func main() {
-	// Log service version
-	fmt.Println("FASTLY_SERVICE_VERSION:", os.Getenv("FASTLY_SERVICE_VERSION"))
-
 	fsthttp.ServeFunc(func(ctx context.Context, w fsthttp.ResponseWriter, r *fsthttp.Request) {
 		// Filter requests that have unexpected methods.
 		if r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" || r.Method == "DELETE" {
@@ -46,57 +135,62 @@ func main() {
 			fmt.Fprintf(w, "This method is not allowed\n")
 			return
 		}
-
-		// If request is to the `/` path...
-		if r.URL.Path == "/" {
-			// Below are some common patterns for Compute@Edge services using TinyGo.
-			// Head to https://developer.fastly.com/learning/compute/go/ to discover more.
-
-			// Create a new request.
-			// req, err := fsthttp.NewRequest("GET", "https://example.com", nil)
-			// if err != nil {
-			//   // Handle Error
-			// }
-
-			// Add request headers.
-			// req.Header.Set("Custom-Header", "Welcome to Compute@Edge!")
-			// req.Header.Set(
-			//   "Another-Custom-Header",
-			//   "Recommended reading: https://developer.fastly.com/learning/compute"
-			// )
-
-			// Override cache TTL.
-			// req.CacheOptions.TTL = 60
-
-			// Forward the request to a backend named "TheOrigin".
-			// resp, err := req.Send(ctx, "TheOrigin")
-			// if err != nil {
-			//	 w.WriteHeader(fsthttp.StatusBadGateway)
-			//	 fmt.Fprintln(w, err)
-			//	 return
-			// }
-
-			// Remove response headers.
-			// resp.Header.Del("Yet-Another-Custom-Header")
-
-			// Copy all headers from the response.
-			// w.Header().Reset(resp.Header.Clone())
-
-			// Log to a Fastly endpoint.
-			// NOTE: You will need to import "github.com/fastly/compute-sdk-go/rtlog"
-			// for this to work
-			// endpoint := rtlog.Open("my_endpoint")
-			// fmt.Fprintln(endpoint, "Hello from the edge!")
-
-			// Send a default synthetic response.
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-			fmt.Fprintln(w, `<iframe src="https://developer.fastly.com/compute-welcome" style="border:0; position: absolute; top: 0; left: 0; width: 100%; height: 100%"></iframe>`)
-			return
+		// Route requests.
+		switch {
+		case r.URL.Path == "/favicon.ico":
+			// Serve favicon from static fs.
+			if favicon, err := fs.ReadFile(static, "favicon.ico"); err != nil {
+				w.WriteHeader(fsthttp.StatusNotFound)
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge404))
+			} else {
+				w.Header().Set("Content-Type", "image/x-icon")
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
+				if r.Method == "GET" {
+					fmt.Fprint(w, string(favicon))
+				}
+			}
+		case strings.HasPrefix(r.URL.Path, "/static"):
+			// Serve static content, if found.
+			if fdata, err := fs.ReadFile(static, strings.TrimPrefix(r.URL.Path, "/static/")); err != nil {
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge404))
+				w.WriteHeader(fsthttp.StatusNotFound)
+			} else {
+				content_type, ok := mimeTypes[filepath.Ext(r.URL.Path)]
+				if !ok {
+					// Fallback to octect-stream for safety
+					// https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+					content_type = "application/octect-stream"
+				}
+				w.Header().Set("Content-Type", content_type)
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
+				if r.Method == "GET" {
+					fmt.Fprint(w, string(fdata))
+				}
+			}
+		default:
+			// Render page template.
+			tmplData := getTmplData(r)
+			w.Header().Set("Content-Type", "text/html")
+			pageTmpl, ok := pages[r.URL.Path]
+			if !ok {
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge404))
+				w.WriteHeader(fsthttp.StatusNotFound)
+				if r.Method == "GET" {
+					if err := err404Tmpl.ExecuteTemplate(w, "404.html", tmplData); err != nil {
+						w.WriteHeader(fsthttp.StatusInternalServerError)
+						log.Fatal(err)
+					}
+				}
+			} else {
+				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
+				if r.Method == "GET" {
+					template.Must(templates.ParseFS(content, pageTmpl))
+					if err := templates.ExecuteTemplate(w, filepath.Base(pageTmpl), tmplData); err != nil {
+						w.WriteHeader(fsthttp.StatusInternalServerError)
+						log.Fatal(err)
+					}
+				}
+			}
 		}
-
-		// Catch all other requests and return a 404.
-		w.WriteHeader(fsthttp.StatusNotFound)
-		fmt.Fprintf(w, "The page you requested could not be found\n")
 	})
 }
