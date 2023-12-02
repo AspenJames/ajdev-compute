@@ -21,6 +21,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"context"
 	"embed"
 	"encoding/json"
@@ -147,7 +148,11 @@ func main() {
 				w.Header().Set("Content-Type", "image/x-icon")
 				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
 				if r.Method == "GET" {
-					fmt.Fprint(w, string(favicon))
+					w.Header().Set("Content-Encoding", "gzip")
+					gw := gzip.NewWriter(w)
+					defer gw.Close()
+
+					fmt.Fprint(gw, string(favicon))
 				}
 			}
 		case strings.HasPrefix(r.URL.Path, "/static"):
@@ -165,7 +170,11 @@ func main() {
 				w.Header().Set("Content-Type", content_type)
 				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
 				if r.Method == "GET" {
-					fmt.Fprint(w, string(fdata))
+					w.Header().Set("Content-Encoding", "gzip")
+					gw := gzip.NewWriter(w)
+					defer gw.Close()
+
+					fmt.Fprint(gw, string(fdata))
 				}
 			}
 		default:
@@ -177,7 +186,11 @@ func main() {
 				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge404))
 				w.WriteHeader(fsthttp.StatusNotFound)
 				if r.Method == "GET" {
-					if err := err404Tmpl.ExecuteTemplate(w, "404.html", tmplData); err != nil {
+					w.Header().Set("Content-Encoding", "gzip")
+					gw := gzip.NewWriter(w)
+					defer gw.Close()
+
+					if err := err404Tmpl.ExecuteTemplate(gw, "404.html", tmplData); err != nil {
 						w.WriteHeader(fsthttp.StatusInternalServerError)
 						log.Fatal(err)
 					}
@@ -185,8 +198,12 @@ func main() {
 			} else {
 				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
 				if r.Method == "GET" {
+					w.Header().Set("Content-Encoding", "gzip")
+					gw := gzip.NewWriter(w)
+					defer gw.Close()
+
 					template.Must(templates.ParseFS(content, pageTmpl))
-					if err := templates.ExecuteTemplate(w, filepath.Base(pageTmpl), tmplData); err != nil {
+					if err := templates.ExecuteTemplate(gw, filepath.Base(pageTmpl), tmplData); err != nil {
 						w.WriteHeader(fsthttp.StatusInternalServerError)
 						log.Fatal(err)
 					}
