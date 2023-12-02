@@ -6,7 +6,7 @@ description = "aspenjames.dev@edge"
 language = "go"
 manifest_version = 3
 name = "ajdev-compute"
-service_id = ""
+service_id = "5LoSocJylomTzNrUNRxMY2"
 
 [scripts]
   build = "./scripts/build.sh"

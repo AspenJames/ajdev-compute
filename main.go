@@ -21,6 +21,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"context"
 	"embed"
 	"encoding/json"
@@ -43,6 +44,7 @@ var (
 		".css":  "text/css",
 		".ico":  "image/x-icon",
 		".js":   "text/javascript",
+		".pdf":  "application/pdf",
 		".wasm": "application/wasm",
 	}
 
@@ -127,6 +129,15 @@ func init() {
 	}
 }
 
+func canCompress(r *fsthttp.Request) bool {
+	for _, ac := range r.Header["Accept-Encoding"] {
+		if ac == "gzip" {
+			return true
+		}
+	}
+	return false
+}
+
 func main() {
 	fsthttp.ServeFunc(func(ctx context.Context, w fsthttp.ResponseWriter, r *fsthttp.Request) {
 		// Filter requests that have unexpected methods.
@@ -146,7 +157,15 @@ func main() {
 				w.Header().Set("Content-Type", "image/x-icon")
 				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
 				if r.Method == "GET" {
-					fmt.Fprint(w, string(favicon))
+					if canCompress(r) {
+						w.Header().Set("Content-Encoding", "gzip")
+						gw := gzip.NewWriter(w)
+						defer gw.Close()
+
+						fmt.Fprint(gw, string(favicon))
+					} else {
+						fmt.Fprint(w, string(favicon))
+					}
 				}
 			}
 		case strings.HasPrefix(r.URL.Path, "/static"):
@@ -164,7 +183,15 @@ func main() {
 				w.Header().Set("Content-Type", content_type)
 				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
 				if r.Method == "GET" {
-					fmt.Fprint(w, string(fdata))
+					if canCompress(r) {
+						w.Header().Set("Content-Encoding", "gzip")
+						gw := gzip.NewWriter(w)
+						defer gw.Close()
+
+						fmt.Fprint(gw, string(fdata))
+					} else {
+						fmt.Fprint(w, string(fdata))
+					}
 				}
 			}
 		default:
@@ -176,18 +203,40 @@ func main() {
 				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge404))
 				w.WriteHeader(fsthttp.StatusNotFound)
 				if r.Method == "GET" {
-					if err := err404Tmpl.ExecuteTemplate(w, "404.html", tmplData); err != nil {
-						w.WriteHeader(fsthttp.StatusInternalServerError)
-						log.Fatal(err)
+					if canCompress(r) {
+						w.Header().Set("Content-Encoding", "gzip")
+						gw := gzip.NewWriter(w)
+						defer gw.Close()
+
+						if err := err404Tmpl.ExecuteTemplate(gw, "404.html", tmplData); err != nil {
+							w.WriteHeader(fsthttp.StatusInternalServerError)
+							log.Fatal(err)
+						}
+					} else {
+						if err := err404Tmpl.ExecuteTemplate(w, "404.html", tmplData); err != nil {
+							w.WriteHeader(fsthttp.StatusInternalServerError)
+							log.Fatal(err)
+						}
 					}
 				}
 			} else {
 				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
 				if r.Method == "GET" {
 					template.Must(templates.ParseFS(content, pageTmpl))
-					if err := templates.ExecuteTemplate(w, filepath.Base(pageTmpl), tmplData); err != nil {
-						w.WriteHeader(fsthttp.StatusInternalServerError)
-						log.Fatal(err)
+					if canCompress(r) {
+						w.Header().Set("Content-Encoding", "gzip")
+						gw := gzip.NewWriter(w)
+						defer gw.Close()
+
+						if err := templates.ExecuteTemplate(gw, filepath.Base(pageTmpl), tmplData); err != nil {
+							w.WriteHeader(fsthttp.StatusInternalServerError)
+							log.Fatal(err)
+						}
+					} else {
+						if err := templates.ExecuteTemplate(w, filepath.Base(pageTmpl), tmplData); err != nil {
+							w.WriteHeader(fsthttp.StatusInternalServerError)
+							log.Fatal(err)
+						}
 					}
 				}
 			}
