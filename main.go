@@ -43,6 +43,7 @@ var (
 		".css":  "text/css",
 		".ico":  "image/x-icon",
 		".js":   "text/javascript",
+		".pdf":  "application/pdf",
 		".wasm": "application/wasm",
 	}
 
