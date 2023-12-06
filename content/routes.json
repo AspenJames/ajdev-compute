@@ -2,5 +2,6 @@
   { "name": "Home", "path": "/" },
   { "name": "About", "path": "/about" },
   { "name": "Resume", "path": "/resume" },
-  { "name": "Particles", "path": "/particles" }
+  { "name": "Particles", "path": "/particles" },
+  { "name": "GitHub", "path": "https://github.com/AspenJames/ajdev-compute" }
 ]
