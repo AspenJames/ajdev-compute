@@ -150,24 +150,8 @@ func main() {
 		switch {
 		case r.URL.Path == "/favicon.ico":
 			// Serve favicon from static fs.
-			if favicon, err := fs.ReadFile(static, "favicon.ico"); err != nil {
-				w.WriteHeader(fsthttp.StatusNotFound)
-				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge404))
-			} else {
-				w.Header().Set("Content-Type", "image/x-icon")
-				w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheMaxAge))
-				if r.Method == "GET" {
-					if canCompress(r) {
-						w.Header().Set("Content-Encoding", "gzip")
-						gw := gzip.NewWriter(w)
-						defer gw.Close()
-
-						fmt.Fprint(gw, string(favicon))
-					} else {
-						fmt.Fprint(w, string(favicon))
-					}
-				}
-			}
+			r.URL.Path = "/static/favicon.ico"
+			fallthrough
 		case strings.HasPrefix(r.URL.Path, "/static"):
 			// Serve static content, if found.
 			if fdata, err := fs.ReadFile(static, strings.TrimPrefix(r.URL.Path, "/static/")); err != nil {
